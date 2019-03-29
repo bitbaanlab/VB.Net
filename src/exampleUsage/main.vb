@@ -32,7 +32,7 @@ Module main
         If (returnValue.Item("success").ToObject(Of Boolean) = True) Then
             Console.Write("You are logged in successfully." + vbCrLf)
         Else
-            Console.Write("error code {0} occured." + vbCrLf, returnValue.Item("error_code").ToObject(Of Integer))
+            Console.Write("error code {0} occurred." + vbCrLf, returnValue.Item("error_code").ToObject(Of Integer))
             Console.ReadLine()
             Return
         End If
@@ -40,14 +40,34 @@ Module main
         file_path = Console.ReadLine()
         returnValue = MALabLib.scan(file_path, Path.GetFileName(file_path))
         If (returnValue.Item("success").ToObject(Of Boolean) = True) Then
-            Console.Write("Scan completed successfully." + vbCrLf)
+            'getting scan results:
+            Dim is_finished = False
+            Dim file_hash = MALabLib.get_sha256(file_path)
+            Dim scan_id = returnValue.Item("scan_id").ToObject(Of Integer)
+            While is_finished = False
+                Console.Write("Waiting for getting results..." + vbCrLf)
+                returnValue = MALabLib.results(file_hash, scan_id)
+                If returnValue.Item("success").ToObject(Of Boolean) = False Then
+                    Console.Write("error code {0} occurred." + vbCrLf, returnValue.Item("error_code").ToObject(Of Integer))
+                    Console.ReadLine()
+                End If
+                Console.Clear()
+                For Each current_av_result As JObject In returnValue.Item("results").ToArray()
+                    If current_av_result.Item("result_state").ToObject(Of Integer) = 32 Then 'file Is malware
+                        Console.Write("{0} ==> {1}" + vbCrLf, current_av_result.Item("av_name").ToString, current_av_result.Item("virus_name").ToString)
+                    End If
+                    If current_av_result.Item("result_state").ToObject(Of Integer) = 33 Then 'file Is clean
+                        Console.Write("{0} ==> {1}" + vbCrLf, current_av_result.Item("av_name").ToString, "Clean")
+                    End If
+                Next
+                is_finished = returnValue.Item("is_finished")
+                System.Threading.Thread.Sleep(2000)
+            End While
         Else
-            Console.Write("error code {0} occured." + vbCrLf, returnValue.Item("error_code").ToObject(Of Integer))
+            Console.Write("error code {0} occurred." + vbCrLf, returnValue.Item("error_code").ToObject(Of Integer))
             Console.ReadLine()
             Return
-            Console.ReadLine()
         End If
-        Console.ReadLine()
     End Sub
 
 End Module
