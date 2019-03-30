@@ -249,6 +249,23 @@ Public Class MALabLib
         Return call_api_with_json_input("api/v1/user/register", params)
     End Function
 
+    Public Function advanced_search(Optional ByVal scan_id As Integer = 0, Optional ByVal file_name As String = "", Optional ByVal malware_name As String = "", Optional ByVal hash As String = "", Optional ByVal origin As String = "", Optional ByVal analyzed As String = "", Optional ByVal has_origin As String = "", Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        If scan_id <> 0 Then params.Add("scan_id", scan_id)
+        If file_name.Length <> 0 Then params.Add("filename", file_name)
+        If malware_name.Length <> 0 Then params.Add("malware_name", malware_name)
+        If hash.Length <> 0 Then params.Add("hash", hash)
+        If origin.Length <> 0 Then params.Add("origin", origin)
+        If analyzed.Length <> 0 Then params.Add("analyzed", analyzed)
+        If has_origin.Length <> 0 Then params.Add("has_origin", has_origin)
+        If ot <> 0 Then params.Add("ot", ot)
+        If ob <> 0 Then params.Add("ob", ob)
+        If page <> 0 Then params.Add("page", page)
+        If per_page <> 0 Then params.Add("per_page", per_page)
+        Return call_api_with_json_input("api/v1/search/scan/advanced", params)
+    End Function
+
     Public Function get_av_list()
         Dim params As JObject = New JObject
         params.Add("apikey", Me.api_key)
