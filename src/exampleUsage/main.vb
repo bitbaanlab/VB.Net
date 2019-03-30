@@ -11,9 +11,8 @@ Module main
         Console.Write("| |_) | | |_| |_) | (_| | (_| | | | | | |  | |/ ___ \| |__| (_| | |_) |" + vbCrLf)
         Console.Write("|____/|_|\__|____/ \__,_|\__,_|_| |_| |_|  |_/_/   \_\_____\__,_|_.__/ " + vbCrLf + vbCrLf)
 
-        Dim email As String = "", password As String = "", serveraddress As String = "", use_https_str As String = ""
+        Dim email As String = "", password As String = "", serveraddress As String = ""
         Dim file_path As String = ""
-        Dim use_https As Boolean = True
 
         Console.Write("Please insert API server address [Default=https://malab.bitbaan.com]: ")
         serveraddress = Console.ReadLine()
@@ -55,8 +54,7 @@ Module main
                 For Each current_av_result As JObject In returnValue.Item("results").ToArray()
                     If current_av_result.Item("result_state").ToObject(Of Integer) = 32 Then 'file Is malware
                         Console.Write("{0} ==> {1}" + vbCrLf, current_av_result.Item("av_name").ToString, current_av_result.Item("virus_name").ToString)
-                    End If
-                    If current_av_result.Item("result_state").ToObject(Of Integer) = 33 Then 'file Is clean
+                    ElseIf current_av_result.Item("result_state").ToObject(Of Integer) = 33 Then 'file Is clean
                         Console.Write("{0} ==> {1}" + vbCrLf, current_av_result.Item("av_name").ToString, "Clean")
                     End If
                 Next
