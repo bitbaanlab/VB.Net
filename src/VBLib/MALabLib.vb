@@ -193,4 +193,43 @@ Public Class MALabLib
         params.Add("hash", hash_value)
         Return call_api_with_json_input("api/v1/file/download", params)
     End Function
+
+    Public Function get_comments(ByVal sha256 As String, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("sha256", sha256)
+        If page <> 0 Then params.Add("page", page)
+        If per_page <> 0 Then params.Add("per_page", per_page)
+        Return call_api_with_json_input("api/v1/comment", params)
+    End Function
+
+    Public Function add_comment(ByVal sha256 As String, ByVal description As String)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("sha256", sha256)
+        params.Add("description", description)
+        Return call_api_with_json_input("api/v1/comment/add", params)
+    End Function
+
+    Public Function edit_comment(ByVal comment_id As Integer, ByVal new_description As String)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("comment_id", comment_id)
+        params.Add("description", new_description)
+        Return call_api_with_json_input("api/v1/comment/edit", params)
+    End Function
+
+    Public Function delete_comment(ByVal comment_id As Integer)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("comment_id", comment_id)
+        Return call_api_with_json_input("api/v1/comment/delete", params)
+    End Function
+
+    Public Function approve_comment(ByVal comment_id As Integer)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("comment_id", comment_id)
+        Return call_api_with_json_input("api/v1/comment/approve", params)
+    End Function
 End Class
