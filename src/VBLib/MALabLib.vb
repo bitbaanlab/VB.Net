@@ -232,4 +232,26 @@ Public Class MALabLib
         params.Add("comment_id", comment_id)
         Return call_api_with_json_input("api/v1/comment/approve", params)
     End Function
+
+    Public Function get_captcha()
+        Dim params As JObject = New JObject
+        Return call_api_with_json_input("api/v1/captcha", params)
+    End Function
+
+    Public Function register(ByVal first_name As String, ByVal last_name As String, ByVal username As String, ByVal email As String, ByVal password As String, ByVal captcha As String)
+        Dim params As JObject = New JObject
+        params.Add("firstname", first_name)
+        params.Add("lastname", last_name)
+        params.Add("username", username)
+        params.Add("email", email)
+        params.Add("password", password)
+        params.Add("captcha", captcha)
+        Return call_api_with_json_input("api/v1/user/register", params)
+    End Function
+
+    Public Function get_av_list()
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        Return call_api_with_json_input("api/v1/search/av_list", params)
+    End Function
 End Class
