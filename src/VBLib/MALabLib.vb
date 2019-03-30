@@ -164,4 +164,33 @@ Public Class MALabLib
         params.Add("scan_id", scan_id)
         Return call_api_with_json_input("api/v1/search/scan/results", params)
     End Function
+
+    Public Function search_by_hash(ByVal hash As String, Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("hash", hash)
+        If ot <> 0 Then params.Add("ot", ot)
+        If ob <> 0 Then params.Add("ob", ob)
+        If page <> 0 Then params.Add("page", page)
+        If per_page <> 0 Then params.Add("per_page", per_page)
+        Return call_api_with_json_input("api/v1/search/scan/hash", params)
+    End Function
+
+    Public Function search_by_malware_name(ByVal malware_name As String, Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("malware_name", malware_name)
+        If ot <> 0 Then params.Add("ot", ot)
+        If ob <> 0 Then params.Add("ob", ob)
+        If page <> 0 Then params.Add("page", page)
+        If per_page <> 0 Then params.Add("per_page", per_page)
+        Return call_api_with_json_input("api/v1/search/scan/malware-name", params)
+    End Function
+
+    Public Function download_file(ByVal hash_value As String)
+        Dim params As JObject = New JObject
+        params.Add("apikey", Me.api_key)
+        params.Add("hash", hash_value)
+        Return call_api_with_json_input("api/v1/file/download", params)
+    End Function
 End Class
