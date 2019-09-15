@@ -158,7 +158,6 @@ Public Class MALabLib
         Catch ex As Exception
             Return unknownerror_respone_json
         End Try
-
     End Function
 
 End Class
