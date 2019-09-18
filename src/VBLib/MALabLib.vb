@@ -33,6 +33,7 @@ Public Class MALabLib
 
     Public Function get_error(return_value As JObject)
         Dim error_list As New System.Text.StringBuilder()
+        error_list.Append("Error!" + vbCrLf)
         If return_value.ContainsKey("error_code") = True Then
             error_list.Append("Error code: " + return_value.Item("error_code").ToString + vbCrLf)
         End If
