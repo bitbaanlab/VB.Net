@@ -8,12 +8,10 @@ Public Class MALabLib
     Private Const USER_AGENT = "BitBaan-API-Sample-VBNet"
 
     Private server_address As String
-    Private api_key As String
     Dim unknownerror_respone_json As JObject
 
-    Public Sub New(ByVal server_address As String, Optional ByVal api_key As String = "")
+    Public Sub New(ByVal server_address As String)
         Me.server_address = server_address
-        Me.api_key = api_key
 
         unknownerror_respone_json = New JObject
         unknownerror_respone_json.Add("error_code", 900)
@@ -33,17 +31,48 @@ Public Class MALabLib
         End Using
     End Function
 
-    Private Function call_api_with_json_input(ByVal api As String, ByVal json_input As JObject) As JObject
-        Dim HttpWebRequest As HttpWebRequest = WebRequest.Create(Me.server_address + "/" + api)
+    Public Function get_error(return_value As JObject)
+        Dim error_list As New System.Text.StringBuilder()
+        error_list.Append("Error!" + vbCrLf)
+        If return_value.ContainsKey("error_code") = True Then
+            error_list.Append("Error code: " + return_value.Item("error_code").ToString + vbCrLf)
+        End If
+        If return_value.ContainsKey("error_desc") = True Then
+            error_list.Append("Error description: " + return_value.Item("error_desc").ToString + vbCrLf)
+        End If
+        If return_value.ContainsKey("error_details_code") = True Then
+            error_list.Append("Error details code: " + return_value.Item("error_details_code").ToString + vbCrLf)
+        End If
+        If return_value.ContainsKey("error_details_desc") = True Then
+            error_list.Append("Error details description: " + return_value.Item("error_details_desc").ToString + vbCrLf)
+        End If
+        If return_value.ContainsKey("status_code") = True Then
+            error_list.Append("Status code: " + return_value.Item("status_code").ToString + vbCrLf)
+            If return_value.Item("status_code").ToObject(Of Integer)() = 422 And return_value.ContainsKey("error") = True Then
+                For Each key In return_value.Item("error")
+                    Dim key_property = key.ToObject(Of JProperty)()
+                    error_list.Append("Validation in: " + key_property.Name + ", [" + key_property.Value.ToArray()(0).ToString + "]" + vbCrLf)
+                Next
+            End If
+        End If
+        Return error_list
+    End Function
+
+    Public Function call_with_json_input(ByVal api As String, ByVal json_input As JObject) As JObject
+        Dim HttpWebRequest As HttpWebRequest = WebRequest.Create(Me.server_address + "/malab/v1/" + api)
         HttpWebRequest.ContentType = "application/json"
         HttpWebRequest.Method = "POST"
         HttpWebRequest.UserAgent = USER_AGENT
-        Using streamWriter = New StreamWriter(HttpWebRequest.GetRequestStream())
-            Dim parsedContent As String = json_input.ToString()
-            streamWriter.Write(parsedContent)
-            streamWriter.Flush()
-            streamWriter.Close()
-        End Using
+        Try
+            Using streamWriter = New StreamWriter(HttpWebRequest.GetRequestStream())
+                Dim parsedContent As String = json_input.ToString()
+                streamWriter.Write(parsedContent)
+                streamWriter.Flush()
+                streamWriter.Close()
+            End Using
+        Catch
+            Return unknownerror_respone_json
+        End Try
         Dim result As String
         Try
             Dim httpResponse As HttpWebResponse = HttpWebRequest.GetResponse()
@@ -69,10 +98,10 @@ Public Class MALabLib
         End Try
     End Function
 
-    Private Function call_api_with_form_input(ByVal api As String, ByVal data_input As JObject, ByVal file_param_name As String, ByVal file_path As String) As JObject
+    Public Function call_with_form_input(ByVal api As String, ByVal data_input As JObject, ByVal file_param_name As String, ByVal file_path As String) As JObject
         Dim boundary As String = "---------------------------" + DateTime.Now.Ticks.ToString("x")
         Dim boundarybytes = System.Text.Encoding.ASCII.GetBytes(vbCrLf + "--" + boundary + vbCrLf)
-        Dim wr As HttpWebRequest = WebRequest.Create(Me.server_address + "/" + api)
+        Dim wr As HttpWebRequest = WebRequest.Create(Me.server_address + "/malab/v1/" + api)
         wr.ContentType = "multipart/form-data; boundary=" + boundary
         wr.Method = "POST"
         wr.KeepAlive = True
@@ -130,145 +159,6 @@ Public Class MALabLib
         Catch ex As Exception
             Return unknownerror_respone_json
         End Try
-
-    End Function
-    Public Function login(ByVal email As String, ByVal password As String) As JObject
-        Dim params As JObject = New JObject
-        params.Add("email", email)
-        params.Add("password", password)
-        Dim retValue = call_api_with_json_input("api/v1/user/login", params)
-        If retValue.Item("success").ToObject(Of Boolean) = True Then Me.api_key = retValue.Item("apikey").ToObject(Of String)
-        Return retValue
     End Function
 
-    Public Function scan(ByVal file_path As String, ByVal file_name As String, Optional ByVal is_private As Boolean = False, Optional ByVal file_origin As String = "") As JObject
-        Dim params As JObject = New JObject
-        params.Add("filename", file_name)
-        params.Add("apikey", Me.api_key)
-        If is_private = True Then params.Add("is_private", True)
-        If file_origin.Length <> 0 Then params.Add("fileorigin", file_origin)
-        Return call_api_with_form_input("api/v1/scan", params, "filedata", file_path)
-    End Function
-
-    Public Function rescan(ByVal file_sha256 As String)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("sha256", file_sha256)
-        Return call_api_with_json_input("api/v1/rescan", params)
-    End Function
-
-    Public Function results(ByVal file_sha256 As String, ByVal scan_id As Integer)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("sha256", file_sha256)
-        params.Add("scan_id", scan_id)
-        Return call_api_with_json_input("api/v1/search/scan/results", params)
-    End Function
-
-    Public Function search_by_hash(ByVal hash As String, Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("hash", hash)
-        If ot <> 0 Then params.Add("ot", ot)
-        If ob <> 0 Then params.Add("ob", ob)
-        If page <> 0 Then params.Add("page", page)
-        If per_page <> 0 Then params.Add("per_page", per_page)
-        Return call_api_with_json_input("api/v1/search/scan/hash", params)
-    End Function
-
-    Public Function search_by_malware_name(ByVal malware_name As String, Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("malware_name", malware_name)
-        If ot <> 0 Then params.Add("ot", ot)
-        If ob <> 0 Then params.Add("ob", ob)
-        If page <> 0 Then params.Add("page", page)
-        If per_page <> 0 Then params.Add("per_page", per_page)
-        Return call_api_with_json_input("api/v1/search/scan/malware-name", params)
-    End Function
-
-    Public Function download_file(ByVal hash_value As String)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("hash", hash_value)
-        Return call_api_with_json_input("api/v1/file/download", params)
-    End Function
-
-    Public Function get_comments(ByVal sha256 As String, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("sha256", sha256)
-        If page <> 0 Then params.Add("page", page)
-        If per_page <> 0 Then params.Add("per_page", per_page)
-        Return call_api_with_json_input("api/v1/comment", params)
-    End Function
-
-    Public Function add_comment(ByVal sha256 As String, ByVal description As String)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("sha256", sha256)
-        params.Add("description", description)
-        Return call_api_with_json_input("api/v1/comment/add", params)
-    End Function
-
-    Public Function edit_comment(ByVal comment_id As Integer, ByVal new_description As String)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("comment_id", comment_id)
-        params.Add("description", new_description)
-        Return call_api_with_json_input("api/v1/comment/edit", params)
-    End Function
-
-    Public Function delete_comment(ByVal comment_id As Integer)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("comment_id", comment_id)
-        Return call_api_with_json_input("api/v1/comment/delete", params)
-    End Function
-
-    Public Function approve_comment(ByVal comment_id As Integer)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        params.Add("comment_id", comment_id)
-        Return call_api_with_json_input("api/v1/comment/approve", params)
-    End Function
-
-    Public Function get_captcha()
-        Dim params As JObject = New JObject
-        Return call_api_with_json_input("api/v1/captcha", params)
-    End Function
-
-    Public Function register(ByVal first_name As String, ByVal last_name As String, ByVal username As String, ByVal email As String, ByVal password As String, ByVal captcha As String)
-        Dim params As JObject = New JObject
-        params.Add("firstname", first_name)
-        params.Add("lastname", last_name)
-        params.Add("username", username)
-        params.Add("email", email)
-        params.Add("password", password)
-        params.Add("captcha", captcha)
-        Return call_api_with_json_input("api/v1/user/register", params)
-    End Function
-
-    Public Function advanced_search(Optional ByVal scan_id As Integer = 0, Optional ByVal file_name As String = "", Optional ByVal malware_name As String = "", Optional ByVal hash As String = "", Optional ByVal origin As String = "", Optional ByVal analyzed As String = "", Optional ByVal has_origin As String = "", Optional ByVal ot As Integer = 0, Optional ByVal ob As Integer = 0, Optional ByVal page As Integer = 0, Optional ByVal per_page As Integer = 0)
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        If scan_id <> 0 Then params.Add("scan_id", scan_id)
-        If file_name.Length <> 0 Then params.Add("filename", file_name)
-        If malware_name.Length <> 0 Then params.Add("malware_name", malware_name)
-        If hash.Length <> 0 Then params.Add("hash", hash)
-        If origin.Length <> 0 Then params.Add("origin", origin)
-        If analyzed.Length <> 0 Then params.Add("analyzed", analyzed)
-        If has_origin.Length <> 0 Then params.Add("has_origin", has_origin)
-        If ot <> 0 Then params.Add("ot", ot)
-        If ob <> 0 Then params.Add("ob", ob)
-        If page <> 0 Then params.Add("page", page)
-        If per_page <> 0 Then params.Add("per_page", per_page)
-        Return call_api_with_json_input("api/v1/search/scan/advanced", params)
-    End Function
-
-    Public Function get_av_list()
-        Dim params As JObject = New JObject
-        params.Add("apikey", Me.api_key)
-        Return call_api_with_json_input("api/v1/search/av_list", params)
-    End Function
 End Class
