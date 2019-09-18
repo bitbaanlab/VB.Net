@@ -11,7 +11,7 @@ Module main
         Console.Write("| |_) | | |_| |_) | (_| | (_| | | | | | |  | |/ ___ \| |__| (_| | |_) |" + vbCrLf)
         Console.Write("|____/|_|\__|____/ \__,_|\__,_|_| |_| |_|  |_/_/   \_\_____\__,_|_.__/ " + vbCrLf + vbCrLf)
 
-        Dim email As String = "", password As String = "", serveraddress As String = ""
+        Dim identifier As String = "", password As String = "", serveraddress As String = ""
         Dim file_path As String = ""
 
         Console.Write("Please insert API server address [Default=https://apimalab.bitbaan.com]: ")
@@ -20,15 +20,15 @@ Module main
             serveraddress = "https://apimalab.bitbaan.com"
         End If
 
-        Console.Write("Please insert email address: ")
-        email = Console.ReadLine()
+        Console.Write("Please insert identifier (username, phone no or email): ")
+        identifier = Console.ReadLine()
 
         Console.Write("Please insert your password: ")
         password = Console.ReadLine()
 
         Dim MALabLib As MALabLib = New MALabLib(serveraddress)
         Dim params1 As JObject = New JObject
-        params1.Add("email", email)
+        params1.Add("identifier", identifier)
         params1.Add("password", password)
         Dim return_value As JObject = MALabLib.call_with_json_input("user/login", params1)
         If (return_value.Item("success").ToObject(Of Boolean) = True) Then
